@@ -1,0 +1,7 @@
+yfinance==0.2.65
+flask==2.3.3
+httpx==0.25.2
+pandas==2.0.3
+python-dotenv==1.0.0
+zhipuai==2.1.5.20250801
+numpy==1.26.4

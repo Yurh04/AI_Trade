@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI股票分析助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#165DFF",
+              secondary: "#36CFC9",
+              accent: "#FF7D00",
+              dark: "#1D2129",
+              light: "#F2F3F5",
+            },
+            fontFamily: {
+              inter: ["Inter", "system-ui", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .content-auto {
+          content-visibility: auto;
+        }
+        .glass {
+          backdrop-filter: blur(10px);
+          background-color: rgba(255, 255, 255, 0.7);
+        }
+        .card-shadow {
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="font-inter bg-gradient-to-br from-light to-white min-h-screen text-dark"
+  >
+    <header
+      class="py-4 px-6 md:px-12 bg-white/80 glass sticky top-0 z-50 border-b border-gray-100"
+    >
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+          <i class="fa fa-line-chart text-primary text-2xl"></i>
+          <h1
+            class="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+          >
+            AI股票分析助手
+          </h1>
+        </div>
+        <div
+          class="hidden md:flex items-center space-x-4 text-sm text-gray-600"
+        >
+          <a href="#features" class="hover:text-primary transition-colors"
+            >功能</a
+          >
+          <a href="about" class="hover:text-primary transition-colors">关于</a>
+        </div>
+        <button class="md:hidden text-gray-700">
+          <i class="fa fa-bars text-xl"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 md:px-12 py-12">
+      <section class="text-center mb-16">
+        <h2 class="text-[clamp(1.8rem,4vw,3rem)] font-bold mb-4">
+          智能股票分析与投资建议
+        </h2>
+        <p class="text-gray-600 max-w-2xl mx-auto text-lg">
+          利用AI技术实时分析股票走势，提供专业投资建议，助您把握市场机遇
+        </p>
+      </section>
+
+      <section class="grid md:grid-cols-5 gap-8 mb-20">
+        <div
+          class="md:col-span-2 bg-white rounded-2xl p-6 card-shadow transform transition-transform hover:scale-[1.02]"
+        >
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fa fa-search text-primary mr-2"></i>股票分析
+          </h3>
+          <form id="stock-form" class="space-y-4">
+            <div>
+              <label
+                for="symbol"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >股票代码</label
+              >
+              <div class="relative">
+                <span
+                  class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500"
+                >
+                  <i class="fa fa-tag"></i>
+                </span>
+                <input
+                  type="text"
+                  id="symbol"
+                  name="symbol"
+                  placeholder="例如: AAPL, MSFT, BABA"
+                  value="AAPL"
+                  class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                for="days"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >分析周期(天)</label
+              >
+              <div class="relative">
+                <span
+                  class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500"
+                >
+                  <i class="fa fa-calendar"></i>
+                </span>
+                <input
+                  type="number"
+                  id="days"
+                  name="days"
+                  value="30"
+                  min="1"
+                  max="365"
+                  class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                />
+              </div>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="15">15天</button>
+                <button type="button" class="day-btn px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm transition-colors" data-days="30">30天</button>
+                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="60">60天</button>
+                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="90">90天</button>
+                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="180">180天</button>
+                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="365">1年</button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              id="analyze-btn"
+              class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            >
+              <i class="fa fa-line-chart"></i>
+              <span>开始分析</span>
+            </button>
+
+            <div id="loading" class="hidden text-center py-4">
+              <div
+                class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+              ></div>
+              <p class="mt-2 text-gray-600">正在分析数据，请稍候...</p>
+            </div>
+          </form>
+
+          <div class="mt-6 pt-6 border-t border-gray-100">
+            <h4 class="font-medium mb-3 text-sm text-gray-500">热门股票</h4>
+            <div class="flex flex-wrap gap-2">
+              <button
+                class="symbol-btn px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                data-symbol="AAPL"
+              >
+                AAPL
+              </button>
+              <button
+                class="symbol-btn px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                data-symbol="MSFT"
+              >
+                MSFT
+              </button>
+              <button
+                class="symbol-btn px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                data-symbol="GOOGL"
+              >
+                GOOGL
+              </button>
+              <button
+                class="symbol-btn px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                data-symbol="AMZN"
+              >
+                AMZN
+              </button>
+              <button
+                class="symbol-btn px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                data-symbol="TSLA"
+              >
+                TSLA
+              </button>
+              <button
+                class="symbol-btn px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
+                data-symbol="META"
+              >
+                META
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-3 bg-white rounded-2xl p-6 card-shadow">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fa fa-bar-chart text-primary mr-2"></i>分析结果
+          </h3>
+          <div id="result-container" class="min-h-[400px] flex flex-col">
+            <div
+              id="initial-message"
+              class="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-500"
+            >
+              <i class="fa fa-area-chart text-5xl mb-4 text-gray-300"></i>
+              <h4 class="text-xl font-medium mb-2">尚未进行分析</h4>
+              <p>输入股票代码并点击"开始分析"按钮，获取专业投资建议</p>
+            </div>
+
+            <div id="result-content" class="hidden space-y-6">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h4 id="result-symbol" class="text-xl font-bold"></h4>
+                  <p id="result-period" class="text-sm text-gray-500"></p>
+                </div>
+                <div
+                  id="recommendation-badge"
+                  class="px-3 py-1 rounded-full text-sm font-medium"
+                ></div>
+              </div>
+
+              <div class="h-64 bg-gray-50 rounded-xl p-4">
+                <canvas id="price-chart"></canvas>
+              </div>
+
+              <div class="prose max-w-none">
+                <h5 class="text-lg font-semibold mb-2">投资建议</h5>
+                <div
+                  id="analysis-content"
+                  class="text-gray-700 space-y-3"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="mb-20">
+        <h3 class="text-2xl font-bold mb-8 text-center">核心功能</h3>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="bg-white p-6 rounded-xl card-shadow">
+            <div
+              class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4"
+            >
+              <i class="fa fa-bolt text-primary text-xl"></i>
+            </div>
+            <h4 class="text-lg font-semibold mb-2">实时数据分析</h4>
+            <p class="text-gray-600">
+              获取最新股票数据，实时分析市场趋势，把握投资良机
+            </p>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl card-shadow">
+            <div
+              class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4"
+            >
+              <i class="fa fa-robot text-primary text-xl"></i>
+            </div>
+            <h4 class="text-lg font-semibold mb-2">AI智能分析</h4>
+            <p class="text-gray-600">
+              利用先进AI技术，提供专业股票分析和个性化投资建议
+            </p>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl card-shadow">
+            <div
+              class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4"
+            >
+              <i class="fa fa-shield text-primary text-xl"></i>
+            </div>
+            <h4 class="text-lg font-semibold mb-2">风险评估</h4>
+            <p class="text-gray-600">
+              全面评估投资风险，提供止损建议，保护您的投资组合
+            </p>
+          </div>
+        </div>
+      </section>
+    </main></section>
+
+    <footer class="bg-gray-50 border-t border-gray-100 py-8">
+      <div class="max-w-7xl mx-auto px-6 md:px-12">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-4 md:mb-0">
+            <p class="text-gray-500 text-sm">
+              © JACK AI股票分析助手. 仅供参考，不构成投资建议.
+            </p>
+          </div>
+          <div class="flex space-x-4">
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+            >
+              <i class="fa fa-github text-xl"></i>
+            </a>
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+            >
+              <i class="fa fa-twitter text-xl"></i>
+            </a>
+            <a
+              href="#"
+              class="text-gray-500 hover:text-primary transition-colors"
+            >
+              <i class="fa fa-linkedin text-xl"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("stock-form");
+        const loading = document.getElementById("loading");
+        const initialMessage = document.getElementById("initial-message");
+        const resultContent = document.getElementById("result-content");
+        const resultSymbol = document.getElementById("result-symbol");
+        const resultPeriod = document.getElementById("result-period");
+        const recommendationBadge = document.getElementById(
+          "recommendation-badge"
+        );
+        const analysisContent = document.getElementById("analysis-content");
+        const symbolBtns = document.querySelectorAll(".symbol-btn");
+        const symbolInput = document.getElementById("symbol");
+        let priceChart = null;
+
+        // 热门股票按钮点击事件
+        symbolBtns.forEach((btn) => {
+          btn.addEventListener("click", function () {
+            symbolInput.value = this.dataset.symbol;
+          });
+        });
+
+        // 处理天数按钮点击事件
+        const dayButtons = document.querySelectorAll(".day-btn");
+        const daysInput = document.getElementById("days");
+        dayButtons.forEach(button => {
+          button.addEventListener("click", function() {
+            // 设置输入框的值
+            const days = this.getAttribute("data-days");
+            daysInput.value = days;
+
+            // 更新按钮样式
+            dayButtons.forEach(btn => {
+              btn.className = "day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors";
+            });
+            this.className = "day-btn px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm transition-colors";
+          });
+        });
+
+        // 表单提交事件
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const symbol = formData.get("symbol");
+          const days = formData.get("days");
+
+          // 显示加载状态
+          form.classList.add("opacity-50");
+          form.disabled = true;
+          loading.classList.remove("hidden");
+          initialMessage.classList.add("hidden");
+          resultContent.classList.add("hidden");
+
+          try {
+            // 调用分析API，发送JSON数据
+            const response = await fetch("/analyze", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                symbol: formData.get("symbol"),
+                days: formData.get("days"),
+              }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+              // 更新结果显示
+              resultSymbol.textContent = result.symbol.toUpperCase();
+              resultPeriod.textContent = `分析周期: ${days}天`;
+
+              // 解析分析内容
+              const analysis = result.analysis;
+              // 使用marked.js渲染markdown内容
+              analysisContent.innerHTML = marked.parse(analysis);
+
+              // 设置推荐标签
+              if (analysis.includes("买入")) {
+                recommendationBadge.textContent = "买入";
+                recommendationBadge.className =
+                  "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800";
+              } else if (analysis.includes("卖出")) {
+                recommendationBadge.textContent = "卖出";
+                recommendationBadge.className =
+                  "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800";
+              } else {
+                recommendationBadge.textContent = "持有";
+                recommendationBadge.className =
+                  "px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800";
+              }
+
+              // 准备图表数据
+              const dates = result.dates;
+              const prices = result.prices;
+
+              // 创建或更新图表
+              if (priceChart) {
+                priceChart.destroy();
+              }
+
+              const ctx = document
+                .getElementById("price-chart")
+                .getContext("2d");
+              priceChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                  labels: dates,
+                  datasets: [
+                    {
+                      label: `${result.symbol.toUpperCase()} 股价`,
+                      data: prices,
+                      borderColor: "#165DFF",
+                      backgroundColor: "rgba(22, 93, 255, 0.1)",
+                      borderWidth: 2,
+                      fill: true,
+                      tension: 0.3,
+                      pointRadius: 3,
+                      pointBackgroundColor: "#165DFF",
+                    },
+                  ],
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "top",
+                    },
+                    tooltip: {
+                      mode: "index",
+                      intersect: false,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        display: false,
+                      },
+                      ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                      },
+                    },
+                    y: {
+                      grid: {
+                        borderDash: [2, 4],
+                        color: "rgba(0, 0, 0, 0.05)",
+                      },
+                    },
+                  },
+                  animation: {
+                    duration: 1000,
+                    easing: "easeOutQuart",
+                  },
+                },
+              });
+
+              // 显示结果
+              resultContent.classList.remove("hidden");
+            } else {
+              // 显示错误信息
+              initialMessage.innerHTML = `
+                            <i class="fa fa-exclamation-triangle text-5xl mb-4 text-yellow-400"></i>
+                            <h4 class="text-xl font-medium mb-2">分析失败</h4>
+                            <p class="text-red-500">${result.error}</p>
+                        `;
+              initialMessage.classList.remove("hidden");
+            }
+          } catch (error) {
+            // 显示错误信息
+            initialMessage.innerHTML = `
+                        <i class="fa fa-exclamation-triangle text-5xl mb-4 text-yellow-400"></i>
+                        <h4 class="text-xl font-medium mb-2">网络错误</h4>
+                        <p>无法连接到服务器，请稍后重试</p>
+                    `;
+            initialMessage.classList.remove("hidden");
+          } finally {
+            // 隐藏加载状态
+            form.classList.remove("opacity-50");
+            form.disabled = false;
+            loading.classList.add("hidden");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
