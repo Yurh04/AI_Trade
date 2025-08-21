@@ -31,9 +31,20 @@ api_key = os.getenv("ZHIPUAI_API_KEY")
 # 初始化 ZhipuAI 客户端
 client = ZhipuAI(api_key=api_key)
 
+# 简单内存缓存（symbol+days -> DataFrame with timestamp）
+STOCK_CACHE = {}
+CACHE_TTL_SECONDS = 600
+
 # 获取股票数据
 def fetch_stock_data(symbol, days=30):
     import time, random
+    from time import time as now_ts
+
+    cache_key = f"{symbol.upper()}__{int(days)}"
+    cached = STOCK_CACHE.get(cache_key)
+    if cached and (now_ts() - cached["ts"]) < CACHE_TTL_SECONDS:
+        print(f"使用缓存数据: {cache_key}")
+        return cached["df"].copy()
 
     max_retries = 5
     initial_delay = 2
@@ -52,6 +63,7 @@ def fetch_stock_data(symbol, days=30):
 
             if not data.empty:
                 print(f"✅ 成功获取数据：{len(data)} 行，最新收盘价 {data['Close'].iloc[-1]}")
+                STOCK_CACHE[cache_key] = {"ts": now_ts(), "df": data.copy()}
                 return data
 
             info = ticker.info
@@ -66,7 +78,9 @@ def fetch_stock_data(symbol, days=30):
             print("Error fetching data:", e)
 
     print(f"⚠️ 无法获取实时数据，使用模拟数据...")
-    return generate_simulated_data(symbol, days)
+    sim = generate_simulated_data(symbol, days)
+    STOCK_CACHE[cache_key] = {"ts": now_ts(), "df": sim.copy()}
+    return sim
 
 # 生成模拟数据
 def generate_simulated_data(symbol, days):
@@ -93,6 +107,63 @@ def generate_simulated_data(symbol, days):
     print(f"✅ 模拟数据生成完毕，共 {len(df)} 行")
     return df
 
+# 统一技术指标计算
+
+def compute_indicators(raw_df: pd.DataFrame) -> pd.DataFrame:
+    data = raw_df.copy()
+
+    # 确保'Adj Close'
+    if 'Adj Close' not in data.columns:
+        if 'Close' in data.columns:
+            data['Adj Close'] = data['Close']
+        else:
+            return data
+
+    # 基础指标
+    data['Daily Return'] = data['Adj Close'].pct_change()
+    data['Volatility'] = data['Daily Return'].rolling(window=7).std() * np.sqrt(7)
+    data['MA5'] = data['Adj Close'].rolling(window=5, min_periods=1).mean()
+    data['MA20'] = data['Adj Close'].rolling(window=20, min_periods=1).mean()
+
+    # 成交量
+    if 'Volume' in data.columns:
+        data['Volume_MA5'] = data['Volume'].rolling(window=5).mean()
+        data['Volume_MA20'] = data['Volume'].rolling(window=20).mean()
+        data['Price_Up'] = data['Adj Close'].diff() > 0
+        data['Volume_Surge'] = data['Volume'] > (data['Volume_MA20'] * 1.5)
+        data['Up_With_Surge'] = data['Price_Up'] & data['Volume_Surge']
+        data['Down_With_Surge'] = (~data['Price_Up']) & data['Volume_Surge']
+
+    # ATR
+    if all(col in data.columns for col in ['High', 'Low', 'Adj Close']):
+        tr1 = data['High'] - data['Low']
+        tr2 = (data['High'] - data['Adj Close'].shift(1)).abs()
+        tr3 = (data['Low'] - data['Adj Close'].shift(1)).abs()
+        data['TrueRange'] = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        data['ATR14'] = data['TrueRange'].rolling(window=14, min_periods=1).mean()
+    else:
+        data['ATR14'] = np.nan
+
+    # MACD
+    ema12 = data['Adj Close'].ewm(span=12, adjust=False, min_periods=1).mean()
+    ema26 = data['Adj Close'].ewm(span=26, adjust=False, min_periods=1).mean()
+    data['MACD'] = ema12 - ema26
+    data['Signal'] = data['MACD'].ewm(span=9, adjust=False, min_periods=1).mean()
+    data['MACD_Hist'] = data['MACD'] - data['Signal']
+
+    # RSI14
+    delta = data['Adj Close'].diff()
+    up = delta.clip(lower=0)
+    down = -delta.clip(upper=0)
+    roll_up = up.ewm(span=14, adjust=False, min_periods=1).mean()
+    roll_down = down.ewm(span=14, adjust=False, min_periods=1).mean()
+    # 避免分母为0导致的NaN，加入微小epsilon
+    epsilon = 1e-9
+    rs = roll_up / (roll_down.replace(0, epsilon))
+    data['RSI14'] = 100 - (100 / (1 + rs))
+
+    return data
+
 # 使用智谱AI分析股票数据
 def analyze_stock_with_ai(stock_data, symbol, has_position=False, cost_price=None, shares=None):
     # 预处理
@@ -108,45 +179,8 @@ def analyze_stock_with_ai(stock_data, symbol, has_position=False, cost_price=Non
             print(error_msg)
             return error_msg
 
-    # 基础技术指标
-    data['Daily Return'] = data['Adj Close'].pct_change()
-    data['Volatility'] = data['Daily Return'].rolling(window=7).std() * np.sqrt(7)
-    data['MA5'] = data['Adj Close'].rolling(window=5).mean()
-    data['MA20'] = data['Adj Close'].rolling(window=20).mean()
-
-    # 成交量相关指标
-    if 'Volume' in data.columns:
-        data['Volume_MA5'] = data['Volume'].rolling(window=5).mean()
-        data['Volume_MA20'] = data['Volume'].rolling(window=20).mean()
-        # 量价配合：价格涨跌与量能对比
-        data['Price_Up'] = data['Adj Close'].diff() > 0
-        data['Volume_Surge'] = data['Volume'] > (data['Volume_MA20'] * 1.5)
-        data['Up_With_Surge'] = data['Price_Up'] & data['Volume_Surge']
-        data['Down_With_Surge'] = (~data['Price_Up']) & data['Volume_Surge']
-
-    # 波动率与ATR（近似计算）
-    if all(col in data.columns for col in ['High', 'Low', 'Adj Close']):
-        tr1 = data['High'] - data['Low']
-        tr2 = (data['High'] - data['Adj Close'].shift(1)).abs()
-        tr3 = (data['Low'] - data['Adj Close'].shift(1)).abs()
-        data['TrueRange'] = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-        data['ATR14'] = data['TrueRange'].rolling(window=14).mean()
-
-    # MACD
-    ema12 = data['Adj Close'].ewm(span=12, adjust=False).mean()
-    ema26 = data['Adj Close'].ewm(span=26, adjust=False).mean()
-    data['MACD'] = ema12 - ema26
-    data['Signal'] = data['MACD'].ewm(span=9, adjust=False).mean()
-    data['MACD_Hist'] = data['MACD'] - data['Signal']
-
-    # RSI(14)
-    delta = data['Adj Close'].diff()
-    up = delta.clip(lower=0)
-    down = -delta.clip(upper=0)
-    roll_up = up.ewm(span=14, adjust=False).mean()
-    roll_down = down.ewm(span=14, adjust=False).mean()
-    rs = roll_up / (roll_down.replace(0, np.nan))
-    data['RSI14'] = 100 - (100 / (1 + rs))
+    # 统一技术指标计算
+    data = compute_indicators(data)
 
     # 确保用于显示的数据列存在
     display_cols = ['Open','High','Low','Adj Close','Volume']
@@ -332,6 +366,9 @@ def analyze():
             except (ValueError, TypeError):
                 return jsonify({"error": "持仓成本和持股数量必须是有效数字"}), 400
 
+        # 统一技术指标计算
+        df = compute_indicators(df)
+
         result = analyze_stock_with_ai(df, symbol, has_position, cost_price, shares)
 
         # 准备图表数据
@@ -343,14 +380,54 @@ def analyze():
         else:
             prices = []
 
+        def series_or_empty(col):
+            if col not in df.columns:
+                return []
+            cleaned = []
+            for v in df[col].tolist():
+                try:
+                    if v is None:
+                        cleaned.append(None)
+                        continue
+                    fv = float(v)
+                    if np.isnan(fv) or np.isinf(fv):
+                        cleaned.append(None)
+                    else:
+                        cleaned.append(fv)
+                except Exception:
+                    cleaned.append(None)
+            return cleaned
+
+        # 提取决策（后端兜底解析，若模型遵循“决策: XXX”）
+        decision = None
+        try:
+            if isinstance(result, str):
+                import re
+                m = re.search(r"(?:^|\n)\s*决策\s*[:：]\s*(买入|卖出|持有|观望)\s*$", result, re.M)
+                if m:
+                    decision = m.group(1)
+        except Exception:
+            pass
+
         return jsonify({
             "symbol": symbol,
             "analysis": result,
             "dates": dates,
             "prices": prices,
+            "ma5": series_or_empty('MA5'),
+            "ma20": series_or_empty('MA20'),
+            "volume": series_or_empty('Volume'),
+            "volume_ma5": series_or_empty('Volume_MA5'),
+            "volume_ma20": series_or_empty('Volume_MA20'),
+            "macd": series_or_empty('MACD'),
+            "signal": series_or_empty('Signal'),
+            "macd_hist": series_or_empty('MACD_Hist'),
+            "rsi14": [None if (v is None or (isinstance(v, float) and (np.isnan(v) or np.isinf(v)))) else float(v) for v in series_or_empty('RSI14')],
+            "atr14": series_or_empty('ATR14'),
             "has_position": has_position,
             "cost_price": cost_price,
-            "shares": shares
+            "shares": shares,
+            "decision": decision
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -137,17 +137,55 @@
                 />
               </div>
               <div class="flex flex-wrap gap-2 mt-2">
-                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="15">15天</button>
-                <button type="button" class="day-btn px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm transition-colors" data-days="30">30天</button>
-                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="60">60天</button>
-                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="90">90天</button>
-                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="180">180天</button>
-                <button type="button" class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors" data-days="365">1年</button>
+                <button
+                  type="button"
+                  class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors"
+                  data-days="15"
+                >
+                  15天
+                </button>
+                <button
+                  type="button"
+                  class="day-btn px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm transition-colors"
+                  data-days="30"
+                >
+                  30天
+                </button>
+                <button
+                  type="button"
+                  class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors"
+                  data-days="60"
+                >
+                  60天
+                </button>
+                <button
+                  type="button"
+                  class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors"
+                  data-days="90"
+                >
+                  90天
+                </button>
+                <button
+                  type="button"
+                  class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors"
+                  data-days="180"
+                >
+                  180天
+                </button>
+                <button
+                  type="button"
+                  class="day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors"
+                  data-days="365"
+                >
+                  1年
+                </button>
               </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">持股状态</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >持股状态</label
+              >
               <div class="space-y-3">
                 <label class="flex items-center">
                   <input
@@ -306,12 +344,33 @@
                 ></div>
               </div>
 
-              <div class="h-64 bg-gray-50 rounded-xl p-4">
-                <canvas id="price-chart"></canvas>
+              <div class="space-y-4">
+                <div class="h-64 bg-gray-50 rounded-xl p-4">
+                  <div class="text-xs text-gray-500 mb-1">
+                    价格（含MA5/MA20）
+                  </div>
+                  <canvas id="price-chart"></canvas>
+                </div>
+                <div class="h-28 bg-gray-50 rounded-xl p-4">
+                  <div class="text-xs text-gray-500 mb-1">
+                    成交量（含5/20日均量）
+                  </div>
+                  <canvas id="volume-chart"></canvas>
+                </div>
+                <div class="h-28 bg-gray-50 rounded-xl p-4">
+                  <div class="text-xs text-gray-500 mb-1">
+                    MACD（线）与柱状图
+                  </div>
+                  <canvas id="macd-chart"></canvas>
+                </div>
+                <div class="h-28 bg-gray-50 rounded-xl p-4">
+                  <div class="text-xs text-gray-500 mb-1">RSI(14)</div>
+                  <canvas id="rsi-chart"></canvas>
+                </div>
               </div>
 
-              <div class="prose max-w-none">
-                <h5 class="text-lg font-semibold mb-2">投资建议</h5>
+              <div class="prose max-w-none bg-gray-50 rounded-xl p-6">
+                <h5 class="text-lg font-semibold mb-4">投资建议</h5>
                 <div
                   id="analysis-content"
                   class="text-gray-700 space-y-3"
@@ -362,7 +421,7 @@
           </div>
         </div>
       </section>
-    </main></section>
+    </main>
 
     <footer class="bg-gray-50 border-t border-gray-100 py-8">
       <div class="max-w-7xl mx-auto px-6 md:px-12">
@@ -416,21 +475,22 @@
         const sharesInput = document.getElementById("shares");
         let priceChart = null;
 
-        // 公共解析函数：提取“决策: XXX”
+        // 公共解析函数：提取“决策: XXX"
         function extractDecision(text, hasPosition) {
-          const normalized = (text || '').replace(/[：:]/g, ':').trim();
-          const regex = /(^|\n)\s*决策\s*:\s*(买入|卖出|持有|观望)\s*$/m;
+          const normalized = (text || "").replace(/[：:]/g, ":").trim();
+          const regex = /(^|\n)\s*决策\s*:\s*(买入|卖出|持有|观望)/m;
           const match = normalized.match(regex);
 
           if (match) {
             const val = match[2];
             if (hasPosition) {
-              if (val === '买入' || val === '卖出' || val === '持有') return val;
+              if (val === "买入" || val === "卖出" || val === "持有")
+                return val;
             } else {
-              if (val === '买入' || val === '观望') return val;
+              if (val === "买入" || val === "观望") return val;
             }
           }
-          return hasPosition ? '持有' : '观望';
+          return hasPosition ? "持有" : "观望";
         }
 
         // 热门股票按钮点击事件
@@ -443,23 +503,25 @@
         // 处理天数按钮点击事件
         const dayButtons = document.querySelectorAll(".day-btn");
         const daysInput = document.getElementById("days");
-        dayButtons.forEach(button => {
-          button.addEventListener("click", function() {
+        dayButtons.forEach((button) => {
+          button.addEventListener("click", function () {
             // 设置输入框的值
             const days = this.getAttribute("data-days");
             daysInput.value = days;
 
             // 更新按钮样式
-            dayButtons.forEach(btn => {
-              btn.className = "day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors";
+            dayButtons.forEach((btn) => {
+              btn.className =
+                "day-btn px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors";
             });
-            this.className = "day-btn px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm transition-colors";
+            this.className =
+              "day-btn px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm transition-colors";
           });
         });
 
         // 处理持股状态选择
-        positionRadios.forEach(radio => {
-          radio.addEventListener("change", function() {
+        positionRadios.forEach((radio) => {
+          radio.addEventListener("change", function () {
             if (this.value === "has_position") {
               positionDetails.classList.remove("hidden");
             } else {
@@ -471,37 +533,65 @@
         // 从本地恢复显示
         function renderFromCache(cache) {
           if (!cache) return;
-          const { symbol, days, dates, prices, analysis, has_position, cost_price, shares, recommendation } = cache;
+          const {
+            symbol,
+            days,
+            dates,
+            prices,
+            analysis,
+            has_position,
+            cost_price,
+            shares,
+            recommendation,
+            ma5,
+            ma20,
+            volume,
+            volume_ma5,
+            volume_ma20,
+            macd,
+            signal,
+            macd_hist,
+            rsi14,
+          } = cache;
           // 隐藏初始提示，显示结果
           initialMessage.classList.add("hidden");
           resultContent.classList.remove("hidden");
 
           // 头部与徽章
-          resultSymbol.textContent = (symbol || '').toUpperCase();
-          resultPeriod.textContent = `分析周期: ${days || ''}天`;
+          resultSymbol.textContent = (symbol || "").toUpperCase();
+          resultPeriod.textContent = `分析周期: ${days || ""}天`;
 
           // 清理之前插入的持仓信息，避免重复
-          const existingInfo = resultContent.querySelector('.position-info-box');
+          const existingInfo =
+            resultContent.querySelector(".position-info-box");
           if (existingInfo) existingInfo.remove();
 
           if (has_position && cost_price && shares && prices && prices.length) {
             const currentPrice = prices[prices.length - 1];
             const profitLoss = (currentPrice - cost_price) * shares;
-            const profitLossPct = ((currentPrice - cost_price) / cost_price) * 100;
-            const positionInfo = document.createElement('div');
-            positionInfo.className = 'position-info-box bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4';
+            const profitLossPct =
+              ((currentPrice - cost_price) / cost_price) * 100;
+            const positionInfo = document.createElement("div");
+            positionInfo.className =
+              "position-info-box bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4";
             positionInfo.innerHTML = `
               <div class="flex justify-between items-center">
                 <div>
                   <p class="text-sm text-blue-700"><strong>持仓信息:</strong></p>
-                  <p class="text-xs text-blue-600">成本: ¥${cost_price} | 数量: ${shares}股 | 当前: ¥${currentPrice.toFixed(2)}</p>
+                  <p class="text-xs text-blue-600">成本: ¥${cost_price} | 数量: ${shares}股 | 当前: ¥${currentPrice.toFixed(
+              2
+            )}</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-sm font-medium ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}">
-                    ${profitLoss >= 0 ? '+' : ''}¥${profitLoss.toFixed(2)}
+                  <p class="text-sm font-medium ${
+                    profitLoss >= 0 ? "text-green-600" : "text-red-600"
+                  }">
+                    ${profitLoss >= 0 ? "+" : ""}¥${profitLoss.toFixed(2)}
                   </p>
-                  <p class="text-xs ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}">
-                    ${profitLoss >= 0 ? '+' : ''}${profitLossPct.toFixed(2)}%
+                  <p class="text-xs ${
+                    profitLoss >= 0 ? "text-green-600" : "text-red-600"
+                  }">
+                    ${profitLoss >= 0 ? "+" : ""}${profitLossPct.toFixed(2)}%
                   </p>
                 </div>
               </div>
@@ -510,24 +600,33 @@
           }
 
           // 渲染分析文本
-          analysisContent.innerHTML = marked.parse(analysis || '');
+          analysisContent.innerHTML = marked.parse(analysis || "");
 
           // 决策徽章
-          recommendationBadge.textContent = recommendation || extractDecision(analysis || '', !!has_position);
+          recommendationBadge.textContent =
+            recommendation || extractDecision(analysis || "", !!has_position);
           const rec = recommendationBadge.textContent;
           if (rec === "买入") {
-            recommendationBadge.className = "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800";
+            recommendationBadge.className =
+              "px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800";
           } else if (rec === "卖出") {
-            recommendationBadge.className = "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800";
+            recommendationBadge.className =
+              "px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800";
           } else if (rec === "持有") {
-            recommendationBadge.className = "px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800";
+            recommendationBadge.className =
+              "px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800";
           } else {
-            recommendationBadge.className = "px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800";
+            recommendationBadge.className =
+              "px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800";
           }
 
           // 渲染图表
           if (priceChart) priceChart.destroy();
-          if (Array.isArray(dates) && Array.isArray(prices) && dates.length === prices.length) {
+          if (
+            Array.isArray(dates) &&
+            Array.isArray(prices) &&
+            dates.length === prices.length
+          ) {
             const ctx = document.getElementById("price-chart").getContext("2d");
             priceChart = new Chart(ctx, {
               type: "line",
@@ -535,33 +634,215 @@
                 labels: dates,
                 datasets: [
                   {
-                    label: `${(symbol || '').toUpperCase()} 股价`,
+                    label: `${(symbol || "").toUpperCase()} 收盘价`,
                     data: prices,
                     borderColor: "#165DFF",
                     backgroundColor: "rgba(22, 93, 255, 0.1)",
                     borderWidth: 2,
                     fill: true,
                     tension: 0.3,
-                    pointRadius: 3,
+                    pointRadius: 2,
                     pointBackgroundColor: "#165DFF",
                   },
+                  ...(Array.isArray(ma5) && ma5.length === dates.length
+                    ? [
+                        {
+                          label: "MA5",
+                          data: ma5,
+                          borderColor: "#10b981",
+                          borderWidth: 1.5,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.2,
+                        },
+                      ]
+                    : []),
+                  ...(Array.isArray(ma20) && ma20.length === dates.length
+                    ? [
+                        {
+                          label: "MA20",
+                          data: ma20,
+                          borderColor: "#f59e0b",
+                          borderWidth: 1.5,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.2,
+                        },
+                      ]
+                    : []),
                 ],
               },
               options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: "top" }, tooltip: { mode: "index", intersect: false } },
-                scales: { x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } }, y: { grid: { borderDash: [2,4], color: "rgba(0,0,0,0.05)" } } },
-                animation: { duration: 1000, easing: "easeOutQuart" },
+                plugins: {
+                  legend: { position: "top" },
+                  tooltip: { mode: "index", intersect: false },
+                },
+                scales: {
+                  x: {
+                    grid: { display: false },
+                    ticks: { maxRotation: 45, minRotation: 45 },
+                  },
+                  y: {
+                    grid: { borderDash: [2, 4], color: "rgba(0,0,0,0.05)" },
+                  },
+                },
+                animation: { duration: 600, easing: "easeOutQuart" },
               },
             });
+
+            // 成交量
+            const vctx = document
+              .getElementById("volume-chart")
+              .getContext("2d");
+            new Chart(vctx, {
+              type: "bar",
+              data: {
+                labels: dates,
+                datasets: [
+                  {
+                    type: "bar",
+                    label: "Volume",
+                    data: Array.isArray(volume) ? volume : [],
+                    backgroundColor: "rgba(99, 102, 241, 0.3)",
+                  },
+                  ...(Array.isArray(volume_ma5) &&
+                  volume_ma5.length === dates.length
+                    ? [
+                        {
+                          type: "line",
+                          label: "Vol MA5",
+                          data: volume_ma5,
+                          borderColor: "#10b981",
+                          borderWidth: 1,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.2,
+                        },
+                      ]
+                    : []),
+                  ...(Array.isArray(volume_ma20) &&
+                  volume_ma20.length === dates.length
+                    ? [
+                        {
+                          type: "line",
+                          label: "Vol MA20",
+                          data: volume_ma20,
+                          borderColor: "#f59e0b",
+                          borderWidth: 1,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.2,
+                        },
+                      ]
+                    : []),
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false } },
+              },
+            });
+
+            // MACD
+            const mctx = document.getElementById("macd-chart").getContext("2d");
+            const macdData = Array.isArray(macd) ? macd : [];
+            const signalData = Array.isArray(signal) ? signal : [];
+            const histData = Array.isArray(macd_hist) ? macd_hist : [];
+            const macdValid = macdData.some(
+              (v) => v !== null && v !== undefined
+            );
+            const rsiData = Array.isArray(rsi14) ? rsi14 : [];
+            const rsiValid = rsiData.some((v) => v !== null && v !== undefined);
+
+            if (macdValid) {
+              new Chart(mctx, {
+                type: "bar",
+                data: {
+                  labels: dates,
+                  datasets: [
+                    {
+                      type: "line",
+                      label: "MACD",
+                      data: macdData,
+                      borderColor: "#3b82f6",
+                      borderWidth: 1,
+                      pointRadius: 0,
+                      tension: 0.2,
+                    },
+                    {
+                      type: "line",
+                      label: "Signal",
+                      data: signalData,
+                      borderColor: "#ef4444",
+                      borderWidth: 1,
+                      pointRadius: 0,
+                      tension: 0.2,
+                    },
+                    {
+                      type: "bar",
+                      label: "Hist",
+                      data: histData,
+                      backgroundColor: "rgba(16,185,129,0.3)",
+                    },
+                  ],
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { x: { display: false } },
+                },
+              });
+            } else {
+              mctx.canvas.parentElement.innerHTML =
+                '<div class="text-xs text-gray-400">MACD 数据不足</div>';
+            }
+
+            // RSI
+            const rctx = document.getElementById("rsi-chart").getContext("2d");
+            if (rsiValid) {
+              new Chart(rctx, {
+                type: "line",
+                data: {
+                  labels: dates,
+                  datasets: [
+                    {
+                      label: "RSI14",
+                      data: rsiData,
+                      borderColor: "#8b5cf6",
+                      borderWidth: 1,
+                      pointRadius: 0,
+                      tension: 0.2,
+                    },
+                  ],
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { display: false },
+                    y: { suggestedMin: 0, suggestedMax: 100 },
+                  },
+                },
+              });
+            } else {
+              rctx.canvas.parentElement.innerHTML =
+                '<div class="text-xs text-gray-400">RSI 数据不足</div>';
+            }
           }
         }
 
         // 页面加载时尝试恢复
-        const cached = localStorage.getItem('last_analysis');
+        const cached = localStorage.getItem("last_analysis");
         if (cached) {
-          try { renderFromCache(JSON.parse(cached)); } catch (_) {}
+          try {
+            renderFromCache(JSON.parse(cached));
+          } catch (_) {}
         }
 
         // 表单提交事件
@@ -572,7 +853,9 @@
           const days = formData.get("days");
 
           // 获取持股状态
-          const positionStatus = document.querySelector('input[name="position_status"]:checked').value;
+          const positionStatus = document.querySelector(
+            'input[name="position_status"]:checked'
+          ).value;
           const hasPosition = positionStatus === "has_position";
 
           // 获取持仓信息
@@ -613,7 +896,7 @@
                 days: formData.get("days"),
                 has_position: hasPosition,
                 cost_price: costPrice,
-                shares: shares
+                shares: shares,
               }),
             });
 
@@ -622,39 +905,61 @@
             if (response.ok) {
               // 组合缓存对象并存储
               const analysis = result.analysis;
-              const recommendation = extractDecision(analysis, result.has_position);
+              // 优先使用后端decision字段
+              const recommendation =
+                result.decision &&
+                ["买入", "卖出", "持有", "观望"].includes(result.decision)
+                  ? result.decision
+                  : extractDecision(analysis, result.has_position);
               const toCache = {
                 symbol: result.symbol,
                 days,
                 dates: result.dates,
                 prices: result.prices,
+                ma5: result.ma5,
+                ma20: result.ma20,
+                volume: result.volume,
+                volume_ma5: result.volume_ma5,
+                volume_ma20: result.volume_ma20,
+                macd: result.macd,
+                signal: result.signal,
+                macd_hist: result.macd_hist,
+                rsi14: result.rsi14,
                 analysis,
                 has_position: result.has_position,
                 cost_price: result.cost_price,
                 shares: result.shares,
-                recommendation
+                recommendation,
               };
-              localStorage.setItem('last_analysis', JSON.stringify(toCache));
+              localStorage.setItem("last_analysis", JSON.stringify(toCache));
 
               // 从本地渲染（可复用同一套渲染流程，避免重复代码）
               renderFromCache(toCache);
             } else {
-              // 显示错误信息
-              initialMessage.innerHTML = `
-                            <i class="fa fa-exclamation-triangle text-5xl mb-4 text-yellow-400"></i>
-                            <h4 class="text-xl font-medium mb-2">分析失败</h4>
-                            <p class="text-red-500">${result.error}</p>
-                        `;
-              initialMessage.classList.remove("hidden");
+              // 若已有可用结果在展示，则保留结果并不覆盖为错误页
+              if (resultContent.classList.contains("hidden")) {
+                initialMessage.innerHTML = `
+                              <i class="fa fa-exclamation-triangle text-5xl mb-4 text-yellow-400"></i>
+                              <h4 class="text-xl font-medium mb-2">分析失败</h4>
+                              <p class="text-red-500">${result.error}</p>
+                          `;
+                initialMessage.classList.remove("hidden");
+              } else {
+                console.warn("API错误，但已使用缓存结果显示");
+              }
             }
           } catch (error) {
-            // 显示错误信息
-            initialMessage.innerHTML = `
-                        <i class="fa fa-exclamation-triangle text-5xl mb-4 text-yellow-400"></i>
-                        <h4 class="text-xl font-medium mb-2">网络错误</h4>
-                        <p>无法连接到服务器，请稍后重试</p>
-                    `;
-            initialMessage.classList.remove("hidden");
+            // 若已有可用结果在展示，则保留结果并不覆盖为错误页
+            if (resultContent.classList.contains("hidden")) {
+              initialMessage.innerHTML = `
+                          <i class="fa fa-exclamation-triangle text-5xl mb-4 text-yellow-400"></i>
+                          <h4 class="text-xl font-medium mb-2">网络错误</h4>
+                          <p>无法连接到服务器，请稍后重试</p>
+                      `;
+              initialMessage.classList.remove("hidden");
+            } else {
+              console.warn("网络异常，但已使用缓存结果显示");
+            }
           } finally {
             // 隐藏加载状态
             form.classList.remove("opacity-50");
