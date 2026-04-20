@@ -5,3 +5,6 @@ pandas==2.0.3
 python-dotenv==1.0.0
 zhipuai==2.1.5.20250801
 numpy==1.26.4
+akshare==1.18.32
+pandas-ta==0.3.14b0
+vectorbt>=0.26.0

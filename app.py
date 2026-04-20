@@ -11,6 +11,9 @@ import textwrap
 import traceback
 from yfinance.exceptions import YFRateLimitError
 
+from lib.unified_fetcher import fetch_stock_data_unified
+from lib.indicators import calculate_indicators, get_indicator_list, get_indicator_category
+
 # 加载环境变量
 load_dotenv()
 
@@ -54,7 +57,7 @@ def fetch_stock_data(symbol, days=30):
         try:
             if attempt > 0:
                 delay = initial_delay * (backoff_factor ** attempt) + random.uniform(0, attempt)
-                print(f"速率限制，等待 {delay:.1f} 秒后重试 {attempt + 1}/{max_retries}…")
+                print(f"速率限制，等待 {delay:.1f} 秒后重试 {attempt + 1}/{max_retries}...")
                 time.sleep(delay)
 
             print(f"尝试 {attempt + 1}/{max_retries}: 获取 {symbol} 数据")
@@ -371,7 +374,6 @@ def analyze():
 
         result = analyze_stock_with_ai(df, symbol, has_position, cost_price, shares)
 
-        # 准备图表数据
         dates = df.index.strftime('%Y-%m-%d').tolist()
         if 'Adj Close' in df.columns:
             prices = df['Adj Close'].tolist()
@@ -430,6 +432,42 @@ def analyze():
             "decision": decision
         })
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/indicators', methods=['POST'])
+def indicators():
+    try:
+        symbol = request.json.get('symbol', 'AAPL')
+        market = request.json.get('market', 'US')
+        days = int(request.json.get('days', 30))
+
+        df = fetch_stock_data_unified(symbol, market, days)
+        if df.empty:
+            return jsonify({"error": "未获取到数据"}), 404
+
+        df_with_indicators = calculate_indicators(df)
+
+        dates = df_with_indicators.index.strftime('%Y-%m-%d').tolist()
+        indicators_data = {}
+
+        for col in df_with_indicators.columns:
+            if col not in ['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']:
+                indicators_data[col] = {
+                    'category': get_indicator_category(col),
+                    'values': df_with_indicators[col].fillna(0).tolist()
+                }
+
+        return jsonify({
+            "symbol": symbol,
+            "market": market,
+            "dates": dates,
+            "indicators": indicators_data,
+            "indicator_count": len(indicators_data)
+        })
+    except Exception as e:
+        print(f"🚨 指标计算错误: {str(e)}")
+        print(f"错误详情: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
